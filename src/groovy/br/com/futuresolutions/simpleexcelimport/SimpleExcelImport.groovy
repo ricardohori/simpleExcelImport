@@ -13,6 +13,18 @@ class SimpleExcelImport {
 	
 	/**
 	 * Receives an excel file InputStream and a Sheet Configuration list.
+	 * Sheet configuration should be as follows: 
+	 * [
+	 * 		name:"CDs",
+	 * 		header:[
+	 *			A:"Album Name",
+	 *			B:"Artist",
+	 *			C:"Year",
+	 *			D:"Sold"
+	 *			],
+	 *		dateColumns:["Year"](optional),
+	 *		startRow:2
+	 *	]
 	 * 
 	 * @param excelInputStream
 	 * @param sheetStructureList
