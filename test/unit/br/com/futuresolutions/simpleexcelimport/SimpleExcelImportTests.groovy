@@ -46,7 +46,7 @@ class SimpleExcelImportTests extends GrailsUnitTestCase {
 		try{
 			testWorkbook excelFile
 		}catch(RuntimeException re){
-			assertEquals "Column incorrectly specified as Date!", re.getMessage()
+			assertEquals "Workbook contains error(s): 'Column incorrectly specified as Date!'.", re.getMessage()
 		}
 	}
 	
@@ -138,7 +138,7 @@ class SimpleExcelImportTests extends GrailsUnitTestCase {
 		assertTrue "Year should be a Date!",books[0]["Year"] instanceof Date
 		assertEquals "First year should be 25/06/2005!",sdf.parse("25/06/2005"),books[0]["Year"]
 		assertEquals "Second year should be 26/06/2006!",sdf.parse("26/06/2006"),books[1]["Year"]
-		assertEquals "Third year should be 27/06/2007!",sdf.parse("27/06/2007"),books[2]["Year"]
+		assertEquals "Third year should be be blank!","",books[2]["Year"]
 		assertEquals "Fourth year should be 28/06/2008!",sdf.parse("28/06/2008"),books[3]["Year"]
 	}
 }

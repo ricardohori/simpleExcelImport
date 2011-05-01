@@ -11,83 +11,92 @@ import br.com.futuresolutions.simpleexcelimport.exception.NotADateColumnExceptio
 
 class SimpleExcelImport {
 	
+	/**
+	 * Receives an excel file InputStream and a Sheet Configuration list.
+	 * 
+	 * @param excelInputStream
+	 * @param sheetStructureList
+	 * @return imported workbook object.
+	 */
 	def static excelImport(excelInputStream,sheetStructureList){
 		if(excelInputStream){
 			def workbook
 			try{
+				//Finds out the correct workbook version, 2003 or 2007.
 				workbook = new WorkbookFactory().create(new PushbackInputStream(excelInputStream))
 			}catch(all){
 				throw new RuntimeException("Invalid File Type!")
 			}
-			importExcel(workbook,sheetStructureList)	
+			importWorkbook(workbook,sheetStructureList)	
 		}
 	}
 	
-	def static private importExcel(workbook,sheetStructureList){
+	def static private importWorkbook(workbook,sheetStructureList){
 		def workbookObject = [:]
 		def evaluator
 		
+		//Get the appropriate evaluator based on the type of workbook provided by the factory.
 		if(workbook instanceof HSSFWorkbook){
 			evaluator = new HSSFFormulaEvaluator(workbook)
 		}else{
 			evaluator = new XSSFFormulaEvaluator(workbook)
 		}
 
+		//Builds the workbook object based on the configuration provided, sheet by sheet.
 		sheetStructureList?.each{sheetStructure->
-			def sheetValuesList = []
+			def sheetData = []
 			def sheet = workbook.getSheet(sheetStructure.name)
+			//Gathers data by row.
 			sheet?.rowIterator().eachWithIndex{row,index->
+				//Considers data from the established starting row forward.
 				if(index >= sheetStructure.startRow-1){
-					def sheetMap = [:]
+					def rowData = [:]
+					//Creates row data map.
 					sheetStructure.header.each{entry->
 						def cellContent = row.getCell(CellReference.convertColStringToIndex(entry.key))
 						if(cellContent){
-							sheetMap[entry.value] = resolveCell(cellContent,evaluator,sheetStructure.dateColumns?.contains(entry.value))
+							try{
+								rowData[entry.value] = resolveCell(cellContent,evaluator,sheetStructure.dateColumns?.contains(entry.value))
+							}catch(all){
+								throw new RuntimeException("Workbook contains error(s): '"+all.getMessage()+"'.")
+							}
 						}else{
-							sheetMap[entry.value] = ""
+							rowData[entry.value] = ""
 						}
 					}
-					sheetValuesList << sheetMap
+					sheetData << rowData
 				}
 			}
-			workbookObject[sheetStructure.name] = sheetValuesList			
+			workbookObject[sheetStructure.name] = sheetData			
 		}
 		return workbookObject
 	}
 	
 	def private static resolveCell(cellContent,evaluator,isDate){
 		def returnValue
-		try{
-			switch(cellContent.getCellType()){
-				case 0: //CELL_TYPE_NUMERIC
-					returnValue = isDate?cellContent.getDateCellValue():cellContent.getNumericCellValue()
-					break
-				case 1://CELL_TYPE_STRING
-					returnValue = isDate?cellContent.getDateCellValue():cellContent.getStringCellValue()
-					break
-				case 2://CELL_TYPE_FORMULA
-					returnValue = resolveCell(evaluator.evaluateInCell(cellContent),evaluator,isDate)
-					break
-				case 3://CELL_TYPE_BLANK
-					returnValue = ""
-					break
-				case 4://CELL_TYPE_BOOLEAN
-					returnValue = isDate?cellContent.getDateCellValue():cellContent.getBooleanCellValue()
-					break
-				case 5://CELL_TYPE_ERROR
-					throw new InvalidValueException()
-				default:
-					throw new RuntimeException("Unknown cell type!")
-			}
-			if(isDate && returnValue == null){
-				throw new NotADateColumnException()
-			}
-		}catch(InvalidValueException e){
-			throw new RuntimeException(e.getMessage())
-		}catch(NotADateColumnException e){
-			throw new RuntimeException(e.getMessage())
-		}catch(RuntimeException re){
-			throw new RuntimeException("Workbook contains error(s): '"+re.getMessage()+"'.")
+		switch(cellContent.getCellType()){
+			case 0: //CELL_TYPE_NUMERIC
+				returnValue = isDate?cellContent.getDateCellValue():cellContent.getNumericCellValue()
+				break
+			case 1://CELL_TYPE_STRING
+				returnValue = isDate?cellContent.getDateCellValue():cellContent.getStringCellValue()
+				break
+			case 2://CELL_TYPE_FORMULA
+				returnValue = resolveCell(evaluator.evaluateInCell(cellContent),evaluator,isDate)
+				break
+			case 3://CELL_TYPE_BLANK
+				returnValue = ""
+				break
+			case 4://CELL_TYPE_BOOLEAN
+				returnValue = cellContent.getBooleanCellValue()
+				break
+			case 5://CELL_TYPE_ERROR
+				throw new InvalidValueException()
+			default:
+				throw new RuntimeException("Unknown cell type!")
+		}
+		if(isDate && returnValue == null){
+			throw new NotADateColumnException()
 		}
 		returnValue
 	}
