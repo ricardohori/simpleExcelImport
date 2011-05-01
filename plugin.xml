@@ -1,0 +1,17 @@
+<plugin name='simple-excel-import' version='0.1' grailsVersion='1.3.7 &gt; *'>
+  <author>Ricardo Hori</author>
+  <authorEmail>inconscience@gmail.com</authorEmail>
+  <title>Simple Excel Import</title>
+  <description>\
+Plugin created with the purpose of realizing simple excel imports. Works for 2003 and 2007 workbooks.
+</description>
+  <documentation>http://grails.org/plugin/simple-excel-import</documentation>
+  <resources>
+    <resource>BuildConfig</resource>
+    <resource>Config</resource>
+    <resource>DataSource</resource>
+    <resource>UrlMappings</resource>
+  </resources>
+  <dependencies />
+  <behavior />
+</plugin>
