@@ -10,7 +10,7 @@ import br.com.futuresolutions.simpleexcelimport.exception.InvalidValueException
 import br.com.futuresolutions.simpleexcelimport.exception.NotADateColumnException
 
 class SimpleExcelImport {
-	
+
 	/**
 	 * Receives an excel file InputStream and a Sheet Configuration list.
 	 * Sheet configuration should be as follows: 
@@ -39,20 +39,16 @@ class SimpleExcelImport {
 			}catch(all){
 				throw new RuntimeException("Invalid File Type!")
 			}
-			importWorkbook(workbook,sheetStructureList)	
+			importWorkbook(workbook,sheetStructureList)
 		}
 	}
-	
+
 	def static private importWorkbook(workbook,sheetStructureList){
 		def workbookObject = [:]
 		def evaluator
-		
+
 		//Get the appropriate evaluator based on the type of workbook provided by the factory.
-		if(workbook instanceof HSSFWorkbook){
-			evaluator = new HSSFFormulaEvaluator(workbook)
-		}else{
-			evaluator = new XSSFFormulaEvaluator(workbook)
-		}
+		evaluator = workbook instanceof HSSFWorkbook? new HSSFFormulaEvaluator(workbook): new XSSFFormulaEvaluator(workbook)
 
 		//Builds the workbook object based on the configuration provided, sheet by sheet.
 		sheetStructureList?.each{sheetStructure->
@@ -79,11 +75,11 @@ class SimpleExcelImport {
 					sheetData << rowData
 				}
 			}
-			workbookObject[sheetStructure.name] = sheetData			
+			workbookObject[sheetStructure.name] = sheetData
 		}
 		return workbookObject
 	}
-	
+
 	def private static resolveCell(cellContent,evaluator,isDate){
 		def returnValue
 		switch(cellContent.getCellType()){
