@@ -1,4 +1,4 @@
-package br.com.plugitin
+package br.com.plugitin.simpleexcelimport
 
 import org.apache.poi.hssf.usermodel.HSSFFormulaEvaluator
 import org.apache.poi.hssf.usermodel.HSSFWorkbook
@@ -6,8 +6,8 @@ import org.apache.poi.hssf.util.CellReference
 import org.apache.poi.ss.usermodel.WorkbookFactory
 import org.apache.poi.xssf.usermodel.XSSFFormulaEvaluator
 
-import br.com.plugitin.exception.InvalidValueException
-import br.com.plugitin.exception.NotADateColumnException
+import br.com.plugitin.simpleexcelimport.exception.InvalidValueException
+import br.com.plugitin.simpleexcelimport.exception.NotADateColumnException
 
 class SimpleExcelImport {
 

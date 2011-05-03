@@ -1,4 +1,4 @@
-package br.com.plugitin.exception
+package br.com.plugitin.simpleexcelimport.exception
 
 class InvalidValueException extends Exception {
 	@Override

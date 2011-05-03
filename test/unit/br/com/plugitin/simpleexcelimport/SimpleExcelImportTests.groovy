@@ -1,4 +1,4 @@
-package br.com.plugitin
+package br.com.plugitin.simpleexcelimport
 
 import grails.test.*
 
