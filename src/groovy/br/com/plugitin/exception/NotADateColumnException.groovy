@@ -1,4 +1,4 @@
-package br.com.plugit.simpleexcelimport.exception
+package br.com.plugitin.exception
 
 class NotADateColumnException extends Exception {
 	@Override
