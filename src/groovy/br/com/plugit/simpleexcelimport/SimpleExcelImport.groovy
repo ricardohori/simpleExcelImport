@@ -1,4 +1,4 @@
-package br.com.futuresolutions.simpleexcelimport
+package br.com.plugit.simpleexcelimport
 
 import org.apache.poi.hssf.usermodel.HSSFFormulaEvaluator
 import org.apache.poi.hssf.usermodel.HSSFWorkbook
@@ -6,8 +6,8 @@ import org.apache.poi.hssf.util.CellReference
 import org.apache.poi.ss.usermodel.WorkbookFactory
 import org.apache.poi.xssf.usermodel.XSSFFormulaEvaluator
 
-import br.com.futuresolutions.simpleexcelimport.exception.InvalidValueException
-import br.com.futuresolutions.simpleexcelimport.exception.NotADateColumnException
+import br.com.plugit.simpleexcelimport.exception.InvalidValueException;
+import br.com.plugit.simpleexcelimport.exception.NotADateColumnException;
 
 class SimpleExcelImport {
 

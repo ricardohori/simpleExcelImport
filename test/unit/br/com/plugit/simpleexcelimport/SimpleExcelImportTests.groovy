@@ -1,8 +1,10 @@
-package br.com.futuresolutions.simpleexcelimport
+package br.com.plugit.simpleexcelimport
 
 import grails.test.*
 
 import java.text.SimpleDateFormat
+
+import br.com.plugit.simpleexcelimport.SimpleExcelImport;
 
 class SimpleExcelImportTests extends GrailsUnitTestCase {
     protected void setUp() {
