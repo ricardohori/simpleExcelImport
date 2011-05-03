@@ -87,7 +87,9 @@ class SimpleExcelImport {
 				returnValue = isDate?cellContent.getDateCellValue():cellContent.getNumericCellValue()
 				break
 			case 1://CELL_TYPE_STRING
-				returnValue = isDate?cellContent.getDateCellValue():cellContent.getStringCellValue()?:""
+				def content = cellContent.getStringCellValue()
+				//When evaluating formulas a blank string may fall here, therefore the blank check
+				returnValue = content?isDate?cellContent.getDateCellValue():content:""
 				break
 			case 2://CELL_TYPE_FORMULA
 				returnValue = resolveCell(evaluator.evaluateInCell(cellContent),evaluator,isDate)
