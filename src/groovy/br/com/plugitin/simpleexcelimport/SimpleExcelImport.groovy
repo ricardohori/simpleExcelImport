@@ -55,24 +55,39 @@ class SimpleExcelImport {
 			def sheetData = []
 			def sheet = workbook.getSheet(sheetStructure.name)
 			//Gathers data by row.
-			sheet?.rowIterator().eachWithIndex{row,index->
-				//Considers data from the established starting row forward.
-				if(index >= sheetStructure.startRow-1){
-					def rowData = [:]
-					//Creates row data map.
-					sheetStructure.header.each{entry->
-						def cellContent = row.getCell(CellReference.convertColStringToIndex(entry.key))
-						if(cellContent){
-							try{
-								rowData[entry.value] = resolveCell(cellContent,evaluator,sheetStructure.dateColumns?.contains(entry.value))
-							}catch(all){
-								throw new RuntimeException("Workbook contains error(s): '"+all.getMessage()+"'.")
+			def rowIterator = sheet?.rowIterator()
+			if(rowIterator){
+				loop_lines:
+				for(def index = 0; rowIterator.hasNext(); index += 1) {
+					def row = rowIterator.next()
+					
+					//Considers data from the established starting row forward.
+					if(index >= sheetStructure.startRow-1){
+						def rowData = [:]
+						//Creates row data map.
+						sheetStructure.header.each{entry->
+							def cellContent = row.getCell(CellReference.convertColStringToIndex(entry.key))
+							if(cellContent){
+								try{
+									rowData[entry.value] = resolveCell(cellContent,evaluator,sheetStructure.dateColumns?.contains(entry.value))
+								}catch(all){
+									throw new RuntimeException("Workbook contains error(s): '"+all.getMessage()+"'.")
+								}
+							}else{
+								rowData[entry.value] = ""
 							}
-						}else{
-							rowData[entry.value] = ""
 						}
+						def emptyLine = true
+						rowData.each { key, value ->
+							if(!value.toString().isEmpty()) {
+								emptyLine = false
+							}
+						}
+						if(emptyLine) {	//stops the reading when the line is empty
+							break loop_lines;
+						}
+						sheetData << rowData
 					}
-					sheetData << rowData
 				}
 			}
 			workbookObject[sheetStructure.name] = sheetData

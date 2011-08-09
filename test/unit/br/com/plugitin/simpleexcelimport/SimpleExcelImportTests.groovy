@@ -59,6 +59,25 @@ class SimpleExcelImportTests extends GrailsUnitTestCase {
 		}
 	}
 	
+	void testReadUntilBlankLine() {
+		def excelFile = this.class.getClassLoader().getResourceAsStream("readUntilBlankLine.xlsx")
+		def workbook = SimpleExcelImport.excelImport(excelFile, [styleSheetBooks()])
+		assertEquals 3, workbook.Books.size()
+	}
+	
+	private def styleSheetBooks() {
+		return [
+			name:"Books",
+			header:[
+				A:"Book Name",
+				B:"Author",
+				C:"Year"
+				],
+			dateColumns:["Year"],
+			startRow:2
+		]
+	}
+	
 	private void testWorkbook(excelFile){
 		def sheetStructureList = []
 		def testSheet = [
@@ -72,18 +91,8 @@ class SimpleExcelImportTests extends GrailsUnitTestCase {
 			dateColumns:["Year"],
 			startRow:2
 		]
-		def testSheet2 = [
-			name:"Books",
-			header:[
-				A:"Book Name",
-				B:"Author",
-				C:"Year"
-				],
-			dateColumns:["Year"],
-			startRow:2
-		]
 		sheetStructureList << testSheet
-		sheetStructureList << testSheet2
+		sheetStructureList << styleSheetBooks()
 		
 		def workbook = SimpleExcelImport.excelImport(excelFile, sheetStructureList)
 		
