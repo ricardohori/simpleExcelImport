@@ -1,5 +1,6 @@
 package br.com.plugitin.simpleexcelimport
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.poi.hssf.usermodel.HSSFFormulaEvaluator
 import org.apache.poi.hssf.usermodel.HSSFWorkbook
 import org.apache.poi.hssf.util.CellReference
@@ -79,7 +80,7 @@ class SimpleExcelImport {
 						}
 						def emptyLine = true
 						rowData.each { key, value ->
-							if(!value.toString().isEmpty()) {
+							if(StringUtils.isNotEmpty(value.toString())) {
 								emptyLine = false
 							}
 						}
