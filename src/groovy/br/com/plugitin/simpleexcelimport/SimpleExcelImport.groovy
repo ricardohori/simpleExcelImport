@@ -7,8 +7,11 @@ import org.apache.poi.hssf.util.CellReference
 import org.apache.poi.ss.usermodel.WorkbookFactory
 import org.apache.poi.xssf.usermodel.XSSFFormulaEvaluator
 
+import br.com.plugitin.simpleexcelimport.exception.ColumnNotFoundException
 import br.com.plugitin.simpleexcelimport.exception.InvalidValueException
 import br.com.plugitin.simpleexcelimport.exception.NotADateColumnException
+import br.com.plugitin.simpleexcelimport.exception.TabNotFoundException;
+
 
 class SimpleExcelImport {
 
@@ -23,6 +26,7 @@ class SimpleExcelImport {
 	 *			C:"Year",
 	 *			D:"Sold"
 	 *			],
+	 *      headerRow:1 (optional, dictates the row, starting by 1, in which the header takes place, considering the sheet has a header row),
 	 *		dateColumns:["Year"](optional),
 	 *		startRow:2
 	 *	]
@@ -32,7 +36,9 @@ class SimpleExcelImport {
 	 * @return imported workbook object.
 	 */
 	def static excelImport(excelInputStream,sheetStructureList){
-		if(excelInputStream){
+		if(!excelInputStream){
+			throw new IllegalArgumentException("The stream to the sheet must be specified for the import process")
+		} else {
 			def workbook
 			try{
 				//Finds out the correct workbook version, 2003 or 2007.
@@ -40,7 +46,7 @@ class SimpleExcelImport {
 			}catch(all){
 				throw new RuntimeException("Invalid File Type!")
 			}
-			importWorkbook(workbook,sheetStructureList)
+			return importWorkbook(workbook,sheetStructureList)
 		}
 	}
 
@@ -55,6 +61,9 @@ class SimpleExcelImport {
 		sheetStructureList?.each{sheetStructure->
 			def sheetData = []
 			def sheet = workbook.getSheet(sheetStructure.name)
+			if(!sheet){
+				throw new TabNotFoundException(sheetStructure.name)
+			}
 			//Gathers data by row.
 			def rowIterator = sheet?.rowIterator()
 			if(rowIterator){
@@ -62,20 +71,32 @@ class SimpleExcelImport {
 				for(def index = 0; rowIterator.hasNext(); index += 1) {
 					def row = rowIterator.next()
 					
+					//validate the presence of the column headers, if specified to do so
+					if(sheetStructure.headerRow != null && index == sheetStructure.headerRow - 1) {
+						sheetStructure.header.each{columnDef->
+							def cellContent = row.getCell(CellReference.convertColStringToIndex(columnDef.key))
+							def cellValue = cellContent ? resolveCell(cellContent,evaluator,sheetStructure.dateColumns?.contains(columnDef.value)) : null
+							if( columnDef.value != cellValue ){
+								//throw an error when the column was not found on when its header differs from the expected one
+								throw new ColumnNotFoundException(tabName:sheetStructure.name, columnLetter:columnDef.key, columnName:columnDef.value)
+							}
+						}
+					}
+					
 					//Considers data from the established starting row forward.
 					if(index >= sheetStructure.startRow-1){
 						def rowData = [:]
 						//Creates row data map.
-						sheetStructure.header.each{entry->
-							def cellContent = row.getCell(CellReference.convertColStringToIndex(entry.key))
+						sheetStructure.header.each{columnDef->
+							def cellContent = row.getCell(CellReference.convertColStringToIndex(columnDef.key))
 							if(cellContent){
 								try{
-									rowData[entry.value] = resolveCell(cellContent,evaluator,sheetStructure.dateColumns?.contains(entry.value))
+									rowData[columnDef.value] = resolveCell(cellContent,evaluator,sheetStructure.dateColumns?.contains(columnDef.value))
 								}catch(all){
 									throw new RuntimeException("Workbook contains error(s): '"+all.getMessage()+"'.")
 								}
 							}else{
-								rowData[entry.value] = ""
+								rowData[columnDef.value] = ""
 							}
 						}
 						def emptyLine = true

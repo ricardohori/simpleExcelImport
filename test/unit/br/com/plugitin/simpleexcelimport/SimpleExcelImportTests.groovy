@@ -4,6 +4,10 @@ import grails.test.*
 
 import java.text.SimpleDateFormat
 
+import br.com.plugitin.simpleexcelimport.exception.ColumnNotFoundException;
+import br.com.plugitin.simpleexcelimport.exception.TabNotFoundException;
+
+
 class SimpleExcelImportTests extends GrailsUnitTestCase {
     protected void setUp() {
         super.setUp()
@@ -63,6 +67,44 @@ class SimpleExcelImportTests extends GrailsUnitTestCase {
 		def excelFile = this.class.getClassLoader().getResourceAsStream("readUntilBlankLine.xlsx")
 		def workbook = SimpleExcelImport.excelImport(excelFile, [styleSheetBooks()])
 		assertEquals 3, workbook.Books.size()
+	}
+	
+	/**
+	 * Asserts that each expected tab must be found into the sheet
+	 */
+	void testErrorTabNotFound() {
+		def excelFile = this.class.getClassLoader().getResourceAsStream("blank.xls")
+		try {						
+			SimpleExcelImport.excelImport(excelFile, [styleSheetBooks()])
+			fail("An error was expected")
+		} catch (Exception e) {
+			if(!(e instanceof TabNotFoundException)){
+				fail("TabNotFoundException was expected")
+			}
+		}
+	}
+	
+    /**
+ 	 * Asserts that the column headers must be found in the headerRow whenever the headerRow is set to a certain tab to be read
+	 */
+	void testErrorColumnNotFound() {
+		def structure = [:]
+		structure.putAll(styleSheetBooks())
+		structure.headerRow = 1
+		
+		def excelFile = this.class.getClassLoader().getResourceAsStream("testColumnNotFound.xls")
+		try {
+			SimpleExcelImport.excelImport(excelFile, [structure])
+			fail("An error was expected")
+		} catch (Exception e) {
+			if(e instanceof ColumnNotFoundException){
+				assertEquals "Books", e.tabName
+				assertEquals "B", e.columnLetter
+				assertEquals "Author", e.columnName
+			} else {
+				assertEquals ColumnNotFoundException.class, e.getClass()
+			}
+		}
 	}
 	
 	private def styleSheetBooks() {
