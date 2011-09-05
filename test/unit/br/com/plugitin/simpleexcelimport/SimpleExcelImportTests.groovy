@@ -90,7 +90,7 @@ class SimpleExcelImportTests extends GrailsUnitTestCase {
 	void testErrorColumnNotFound() {
 		def structure = [:]
 		structure.putAll(styleSheetBooks())
-		structure.headerRow = 1
+		structure.headerLine = [row:1, names:["Book Name", "Author", "Year"]]
 		
 		def excelFile = this.class.getClassLoader().getResourceAsStream("testColumnNotFound.xls")
 		try {

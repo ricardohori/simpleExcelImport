@@ -26,7 +26,10 @@ class SimpleExcelImport {
 	 *			C:"Year",
 	 *			D:"Sold"
 	 *			],
-	 *      headerRow:1 (optional, dictates the row, starting by 1, in which the header takes place, considering the sheet has a header row),
+	 *      headerLine:[		(optional, tells the header row in which the tab is supposed to have the header names)
+	 *      	row: 1,
+	 *      	names: [columnNameA, columnNameB, ...]], 
+	 *      ]
 	 *		dateColumns:["Year"](optional),
 	 *		startRow:2
 	 *	]
@@ -72,14 +75,16 @@ class SimpleExcelImport {
 					def row = rowIterator.next()
 					
 					//validate the presence of the column headers, if specified to do so
-					if(sheetStructure.headerRow != null && index == sheetStructure.headerRow - 1) {
-						sheetStructure.header.each{columnDef->
-							def cellContent = row.getCell(CellReference.convertColStringToIndex(columnDef.key))
-							def cellValue = cellContent ? resolveCell(cellContent,evaluator,sheetStructure.dateColumns?.contains(columnDef.value)) : null
-							if( columnDef.value != cellValue ){
+					if(sheetStructure.headerLine && index == sheetStructure.headerLine.row - 1) {
+						int idx = 0
+						sheetStructure.headerLine.names.each{name->
+							def cellContent = row.getCell(idx)
+							if(name != cellContent?.getStringCellValue()) {
 								//throw an error when the column was not found on when its header differs from the expected one
-								throw new ColumnNotFoundException(tabName:sheetStructure.name, columnLetter:columnDef.key, columnName:columnDef.value)
+								def columnLetter = CellReference.convertNumToColString(idx)
+								throw new ColumnNotFoundException(tabName:sheetStructure.name, columnLetter:columnLetter, columnName:name)
 							}
+							idx++
 						}
 					}
 					
