@@ -1,6 +1,6 @@
 package br.com.plugitin.simpleexcelimport.exception
 
-class ColumnNotFoundException extends Exception {
+class ColumnNotFoundException extends RuntimeException {
 	
 	private def tabName
 	private def columnLetter

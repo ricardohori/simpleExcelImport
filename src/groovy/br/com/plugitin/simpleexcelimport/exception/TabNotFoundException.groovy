@@ -1,6 +1,6 @@
 package br.com.plugitin.simpleexcelimport.exception
 
-class TabNotFoundException extends Exception {
+class TabNotFoundException extends RuntimeException {
 	
 	private def tabName
 	
