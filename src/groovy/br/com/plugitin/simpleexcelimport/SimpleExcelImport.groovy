@@ -73,13 +73,18 @@ class SimpleExcelImport {
 				loop_lines:
 				for(def index = 0; rowIterator.hasNext(); index += 1) {
 					def row = rowIterator.next()
+					def rowNumber = index+1
 					
 					//validate the presence of the column headers, if specified to do so
-					if(sheetStructure.headerLine && index == sheetStructure.headerLine.row - 1) {
+					if(sheetStructure.headerLine && rowNumber == sheetStructure.headerLine.row) {
 						int idx = 0
 						sheetStructure.headerLine.names.each{name->
 							def cellContent = row.getCell(idx)
-							if(name != cellContent?.getStringCellValue()) {
+							def cellValue
+							try{
+								cellValue = cellContent?.getStringCellValue()
+							}catch(all){}
+							if(name != cellValue) {
 								//throw an error when the column was not found on when its header differs from the expected one
 								def columnLetter = CellReference.convertNumToColString(idx)
 								throw new ColumnNotFoundException(tabName:sheetStructure.name, columnLetter:columnLetter, columnName:name)
@@ -89,17 +94,13 @@ class SimpleExcelImport {
 					}
 					
 					//Considers data from the established starting row forward.
-					if(index >= sheetStructure.startRow-1){
+					if(rowNumber >= sheetStructure.startRow){
 						def rowData = [:]
 						//Creates row data map.
 						sheetStructure.header.each{columnDef->
 							def cellContent = row.getCell(CellReference.convertColStringToIndex(columnDef.key))
 							if(cellContent){
-								try{
-									rowData[columnDef.value] = resolveCell(cellContent,evaluator,sheetStructure.dateColumns?.contains(columnDef.value))
-								}catch(all){
-									throw new RuntimeException("Workbook contains error(s): '"+all.getMessage()+"'.")
-								}
+								rowData[columnDef.value] = resolveCell(sheetStructure.name,rowNumber,columnDef.key,cellContent,evaluator,sheetStructure.dateColumns?.contains(columnDef.value))
 							}else{
 								rowData[columnDef.value] = ""
 							}
@@ -122,7 +123,7 @@ class SimpleExcelImport {
 		return workbookObject
 	}
 
-	def private static resolveCell(cellContent,evaluator,isDate){
+	def private static resolveCell(tabName,rowNumber,columnLetter,cellContent,evaluator,isDate){
 		def returnValue
 		switch(cellContent.getCellType()){
 			case 0: //CELL_TYPE_NUMERIC
@@ -131,10 +132,10 @@ class SimpleExcelImport {
 			case 1://CELL_TYPE_STRING
 				def content = cellContent.getStringCellValue()
 				//When evaluating formulas a blank string may fall here, therefore the blank check
-				returnValue = content?isDate?cellContent.getDateCellValue():content:""
+				returnValue = content?(isDate?cellContent.getDateCellValue():content):""
 				break
 			case 2://CELL_TYPE_FORMULA
-				returnValue = resolveCell(evaluator.evaluateInCell(cellContent),evaluator,isDate)
+				returnValue = resolveCell(tabName,rowNumber,columnLetter,evaluator.evaluateInCell(cellContent),evaluator,isDate)
 				break
 			case 3://CELL_TYPE_BLANK
 				returnValue = ""
@@ -145,10 +146,10 @@ class SimpleExcelImport {
 			case 5://CELL_TYPE_ERROR
 				throw new InvalidValueException()
 			default:
-				throw new RuntimeException("Unknown cell type!")
+				throw new RuntimeException("Invalid cell type at ${rowNumber}, column ${columnLetter} within tab ${tabName}")
 		}
 		if(isDate && returnValue == null){
-			throw new NotADateColumnException()
+			throw new NotADateColumnException(tabName:tabName,rowNumber:rowNumber,columnLetter:columnLetter)
 		}
 		returnValue
 	}

@@ -5,6 +5,8 @@ import grails.test.*
 import java.text.SimpleDateFormat
 
 import br.com.plugitin.simpleexcelimport.exception.ColumnNotFoundException;
+import br.com.plugitin.simpleexcelimport.exception.InvalidValueException;
+import br.com.plugitin.simpleexcelimport.exception.NotADateColumnException;
 import br.com.plugitin.simpleexcelimport.exception.TabNotFoundException;
 
 
@@ -31,17 +33,17 @@ class SimpleExcelImportTests extends GrailsUnitTestCase {
 		def excelFile = this.class.getClassLoader().getResourceAsStream("testNameError.xlsx")
 		try{
 			testWorkbook excelFile
-		}catch(RuntimeException re){
-			assertTrue re.getMessage().startsWith("Workbook contains error(s):")
-		}
+			fail()
+		}catch(RuntimeException re){}
 	}
 	
 	void testExcelImportValueException() {
 		def excelFile = this.class.getClassLoader().getResourceAsStream("testValueError.xlsx")
 		try{
 			testWorkbook excelFile
-		}catch(RuntimeException re){
-			assertEquals "Workbook contains error(s): 'Invalid value(s)!'.", re.getMessage()
+			fail()
+		}catch(Exception re){
+			assertTrue re instanceof InvalidValueException
 		}
 	}
 	
@@ -49,8 +51,8 @@ class SimpleExcelImportTests extends GrailsUnitTestCase {
 		def excelFile = this.class.getClassLoader().getResourceAsStream("testDateError.xlsx")
 		try{
 			testWorkbook excelFile
-		}catch(RuntimeException re){
-			assertEquals "Workbook contains error(s): 'Column incorrectly specified as Date!'.", re.getMessage()
+		}catch(Exception re){
+			assertTrue re instanceof NotADateColumnException
 		}
 	}
 	
