@@ -87,7 +87,7 @@ class SimpleExcelImport {
 							if(name != cellValue) {
 								//throw an error when the column was not found on when its header differs from the expected one
 								def columnLetter = CellReference.convertNumToColString(idx)
-								throw new ColumnNotFoundException(tabName:sheetStructure.name, columnLetter:columnLetter, columnName:name)
+								throw new ColumnNotFoundException(tabName:sheetStructure.name, columnLetter:columnLetter, columnName:name, columnLine:rowNumber)
 							}
 							idx++
 						}

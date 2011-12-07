@@ -43,7 +43,7 @@ class SimpleExcelImportTests extends GrailsUnitTestCase {
 			testWorkbook excelFile
 			fail()
 		}catch(Exception re){
-			assertTrue re instanceof InvalidValueException
+			assertEquals InvalidValueException.class, re.getClass()
 		}
 	}
 	
@@ -52,7 +52,7 @@ class SimpleExcelImportTests extends GrailsUnitTestCase {
 		try{
 			testWorkbook excelFile
 		}catch(Exception re){
-			assertTrue re instanceof NotADateColumnException
+			assertEquals NotADateColumnException, re.getClass()
 		}
 	}
 	
@@ -103,6 +103,7 @@ class SimpleExcelImportTests extends GrailsUnitTestCase {
 				assertEquals "Books", e.tabName
 				assertEquals "B", e.columnLetter
 				assertEquals "Author", e.columnName
+				assertEquals 1, e.columnLine
 			} else {
 				assertEquals ColumnNotFoundException.class, e.getClass()
 			}
