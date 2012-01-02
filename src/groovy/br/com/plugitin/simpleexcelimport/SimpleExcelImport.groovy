@@ -8,6 +8,7 @@ import org.apache.poi.ss.usermodel.WorkbookFactory
 import org.apache.poi.xssf.usermodel.XSSFFormulaEvaluator
 
 import br.com.plugitin.simpleexcelimport.exception.ColumnNotFoundException
+import br.com.plugitin.simpleexcelimport.exception.InvalidFileTypeException;
 import br.com.plugitin.simpleexcelimport.exception.InvalidValueException
 import br.com.plugitin.simpleexcelimport.exception.NotADateColumnException
 import br.com.plugitin.simpleexcelimport.exception.TabNotFoundException;
@@ -47,7 +48,7 @@ class SimpleExcelImport {
 				//Finds out the correct workbook version, 2003 or 2007.
 				workbook = new WorkbookFactory().create(new PushbackInputStream(excelInputStream))
 			}catch(all){
-				throw new RuntimeException("Invalid File Type!")
+				throw new InvalidFileTypeException(all)
 			}
 			return importWorkbook(workbook,sheetStructureList)
 		}
