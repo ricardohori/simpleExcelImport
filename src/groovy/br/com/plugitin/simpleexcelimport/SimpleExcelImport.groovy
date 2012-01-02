@@ -48,7 +48,7 @@ class SimpleExcelImport {
 				//Finds out the correct workbook version, 2003 or 2007.
 				workbook = new WorkbookFactory().create(new PushbackInputStream(excelInputStream))
 			}catch(all){
-				throw new InvalidFileTypeException(all)
+				throw new InvalidFileTypeException()
 			}
 			return importWorkbook(workbook,sheetStructureList)
 		}
