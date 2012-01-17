@@ -4,33 +4,24 @@ import grails.test.*
 
 import java.text.SimpleDateFormat
 
-import br.com.plugitin.simpleexcelimport.exception.ColumnNotFoundException;
-import br.com.plugitin.simpleexcelimport.exception.InvalidValueException;
-import br.com.plugitin.simpleexcelimport.exception.NotADateColumnException;
-import br.com.plugitin.simpleexcelimport.exception.TabNotFoundException;
-
+import br.com.plugitin.simpleexcelimport.exception.ColumnNotFoundException
+import br.com.plugitin.simpleexcelimport.exception.InvalidValueException
+import br.com.plugitin.simpleexcelimport.exception.TabNotFoundException
 
 class SimpleExcelImportTests extends GrailsUnitTestCase {
-    protected void setUp() {
-        super.setUp()
-    }
-
-    protected void tearDown() {
-        super.tearDown()
-    }
 
     void testExcelImport2003() {
-		def excelFile = this.class.getClassLoader().getResourceAsStream("test2003.xls")
+		def excelFile = getInputStream("test/resources/test2003.xls")
 		testWorkbook excelFile
     }
 	
 	void testExcelImport2007() {
-		def excelFile = this.class.getClassLoader().getResourceAsStream("test2007.xlsx")
+		def excelFile = getInputStream("test/resources/test2007.xlsx")
 		testWorkbook excelFile
 	}
 	
 	void testExcelImportNameException() {
-		def excelFile = this.class.getClassLoader().getResourceAsStream("testNameError.xlsx")
+		def excelFile = getInputStream("test/resources/testNameError.xlsx")
 		try{
 			testWorkbook excelFile
 			fail()
@@ -38,7 +29,7 @@ class SimpleExcelImportTests extends GrailsUnitTestCase {
 	}
 	
 	void testExcelImportValueException() {
-		def excelFile = this.class.getClassLoader().getResourceAsStream("testValueError.xlsx")
+		def excelFile = getInputStream("test/resources/testValueError.xlsx")
 		try{
 			testWorkbook excelFile
 			fail()
@@ -47,26 +38,17 @@ class SimpleExcelImportTests extends GrailsUnitTestCase {
 		}
 	}
 	
-	void testExcelImportDateException() {
-		def excelFile = this.class.getClassLoader().getResourceAsStream("testDateError.xlsx")
-		try{
-			testWorkbook excelFile
-		}catch(Exception re){
-			assertEquals NotADateColumnException, re.getClass()
-		}
-	}
-	
 	void testNotAWorkbookException() {
-		def excelFile = this.class.getClassLoader().getResourceAsStream("notAWorkbook.txt")
+		def excelFile = getInputStream("test/resources/notAWorkbook.txt")
 		try{
 			testWorkbook excelFile
 		}catch(RuntimeException re){
-			assertEquals "Invalid File Type!", re.getMessage()
+			assertEquals "Invalid file type!", re.getMessage()
 		}
 	}
 	
 	void testReadUntilBlankLine() {
-		def excelFile = this.class.getClassLoader().getResourceAsStream("readUntilBlankLine.xlsx")
+		def excelFile = getInputStream("test/resources/readUntilBlankLine.xlsx")
 		def workbook = SimpleExcelImport.excelImport(excelFile, [styleSheetBooks()])
 		assertEquals 3, workbook.Books.size()
 	}
@@ -75,7 +57,7 @@ class SimpleExcelImportTests extends GrailsUnitTestCase {
 	 * Asserts that each expected tab must be found into the sheet
 	 */
 	void testErrorTabNotFound() {
-		def excelFile = this.class.getClassLoader().getResourceAsStream("blank.xls")
+		def excelFile = getInputStream("test/resources/blank.xls")
 		try {						
 			SimpleExcelImport.excelImport(excelFile, [styleSheetBooks()])
 			fail("An error was expected")
@@ -94,7 +76,7 @@ class SimpleExcelImportTests extends GrailsUnitTestCase {
 		structure.putAll(styleSheetBooks())
 		structure.headerLine = [row:1, names:["Book Name", "Author", "Year"]]
 		
-		def excelFile = this.class.getClassLoader().getResourceAsStream("testColumnNotFound.xls")
+		def excelFile = getInputStream("test/resources/testColumnNotFound.xls")
 		try {
 			SimpleExcelImport.excelImport(excelFile, [structure])
 			fail("An error was expected")
@@ -118,7 +100,9 @@ class SimpleExcelImportTests extends GrailsUnitTestCase {
 				B:"Author",
 				C:"Year"
 				],
-			dateColumns:["Year"],
+			headerTypes:[
+				C:CellType.DATE,
+			],
 			startRow:2
 		]
 	}
@@ -127,14 +111,16 @@ class SimpleExcelImportTests extends GrailsUnitTestCase {
 		def sheetStructureList = []
 		def testSheet = [
 			name:"CDs",
+			startRow:2,
 			header:[
 				A:"Album Name",
 				B:"Artist",
 				C:"Year",
 				D:"Sold"
 				],
-			dateColumns:["Year"],
-			startRow:2
+			headerTypes:[
+				C:CellType.DATE,
+			],
 		]
 		sheetStructureList << testSheet
 		sheetStructureList << styleSheetBooks()
@@ -194,5 +180,31 @@ class SimpleExcelImportTests extends GrailsUnitTestCase {
 		assertEquals "Second year should be 26/06/2006!",sdf.parse("26/06/2006"),books[1]["Year"]
 		assertEquals "Third year should be be blank!","",books[2]["Year"]
 		assertEquals "Fourth year should be 28/06/2008!",sdf.parse("28/06/2008"),books[3]["Year"]
+	}
+	
+	void testForcedTypeReading(){
+		def testSheet = [
+			name:"Books",
+			startRow:2,
+			header:[
+				A:"Book code",
+				B:"Book Name",
+			],
+			headerTypes:[
+				A:CellType.NUMERIC,
+				B:CellType.STRING
+			],
+		]
+		def excelFile = getInputStream("test/resources/testForcedReadingTypes.xlsx")
+		def workbook = SimpleExcelImport.excelImport(excelFile, [testSheet])
+		def books = workbook.Books
+		assertEquals 5, books[0]["Book code"]
+		assertEquals "10", books[0]["Book Name"]
+		assertEquals 6, books[1]["Book code"]
+		assertEquals "20", books[1]["Book Name"]
+	}
+	
+	private def getInputStream(filename){
+		new FileInputStream(new File(filename))
 	}
 }

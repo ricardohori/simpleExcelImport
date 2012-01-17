@@ -1,38 +1,47 @@
 package br.com.plugitin.simpleexcelimport
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.StringUtils
 import org.apache.poi.hssf.usermodel.HSSFFormulaEvaluator
 import org.apache.poi.hssf.usermodel.HSSFWorkbook
 import org.apache.poi.hssf.util.CellReference
+import org.apache.poi.ss.usermodel.Cell
+import org.apache.poi.ss.usermodel.Row
+import org.apache.poi.ss.usermodel.Sheet
+import org.apache.poi.ss.usermodel.Workbook
 import org.apache.poi.ss.usermodel.WorkbookFactory
 import org.apache.poi.xssf.usermodel.XSSFFormulaEvaluator
 
 import br.com.plugitin.simpleexcelimport.exception.ColumnNotFoundException
-import br.com.plugitin.simpleexcelimport.exception.InvalidFileTypeException;
+import br.com.plugitin.simpleexcelimport.exception.InvalidFileTypeException
 import br.com.plugitin.simpleexcelimport.exception.InvalidValueException
-import br.com.plugitin.simpleexcelimport.exception.NotADateColumnException
-import br.com.plugitin.simpleexcelimport.exception.TabNotFoundException;
+import br.com.plugitin.simpleexcelimport.exception.TabNotFoundException
 
 
 class SimpleExcelImport {
-
+	
 	/**
 	 * Receives an excel file InputStream and a Sheet Configuration list.
 	 * Sheet configuration should be as follows: 
 	 * [
 	 * 		name:"CDs",
+	 * 		startRow:2		
 	 * 		header:[
-	 *			A:"Album Name",
+	 *			A:"Album Code",
 	 *			B:"Artist",
 	 *			C:"Year",
 	 *			D:"Sold"
+	 *			...
 	 *			],
 	 *      headerLine:[		(optional, tells the header row in which the tab is supposed to have the header names)
 	 *      	row: 1,
 	 *      	names: [columnNameA, columnNameB, ...]], 
 	 *      ]
-	 *		dateColumns:["Year"](optional),
-	 *		startRow:2
+	 *      headerTypes:[		(optional, forces the type of each cell to be read. It can be informed only the desired headers instead of all of them)
+	 *			A:CellType.NUMERIC,
+	 *			B:CellType.STRING,
+	 *			C:CellType.DATE,
+	 *			...
+	 *      ]
 	 *	]
 	 * 
 	 * @param excelInputStream
@@ -43,7 +52,7 @@ class SimpleExcelImport {
 		if(!excelInputStream){
 			throw new IllegalArgumentException("The stream to the sheet must be specified for the import process")
 		} else {
-			def workbook
+			Workbook workbook
 			try{
 				//Finds out the correct workbook version, 2003 or 2007.
 				workbook = new WorkbookFactory().create(new PushbackInputStream(excelInputStream))
@@ -54,7 +63,7 @@ class SimpleExcelImport {
 		}
 	}
 
-	def static private importWorkbook(workbook,sheetStructureList){
+	def static private importWorkbook(Workbook workbook,sheetStructureList){
 		def workbookObject = [:]
 		def evaluator
 
@@ -64,7 +73,7 @@ class SimpleExcelImport {
 		//Builds the workbook object based on the configuration provided, sheet by sheet.
 		sheetStructureList?.each{sheetStructure->
 			def sheetData = []
-			def sheet = workbook.getSheet(sheetStructure.name)
+			Sheet sheet = workbook.getSheet(sheetStructure.name)
 			if(!sheet){
 				throw new TabNotFoundException(sheetStructure.name)
 			}
@@ -73,7 +82,7 @@ class SimpleExcelImport {
 			if(rowIterator){
 				loop_lines:
 				for(def index = 0; rowIterator.hasNext(); index += 1) {
-					def row = rowIterator.next()
+					Row row = rowIterator.next()
 					def rowNumber = index+1
 					
 					//validate the presence of the column headers, if specified to do so
@@ -99,9 +108,10 @@ class SimpleExcelImport {
 						def rowData = [:]
 						//Creates row data map.
 						sheetStructure.header.each{columnDef->
-							def cellContent = row.getCell(CellReference.convertColStringToIndex(columnDef.key))
+							def columnLetter = columnDef.key
+							Cell cellContent = row.getCell(CellReference.convertColStringToIndex(columnLetter))
 							if(cellContent){
-								rowData[columnDef.value] = resolveCell(sheetStructure.name,rowNumber,columnDef.key,cellContent,evaluator,sheetStructure.dateColumns?.contains(columnDef.value))
+								rowData[columnDef.value] = resolveCell(sheetStructure.name,rowNumber,columnLetter,cellContent,evaluator,sheetStructure.headerTypes ? sheetStructure.headerTypes[columnLetter] : null)
 							}else{
 								rowData[columnDef.value] = ""
 							}
@@ -124,19 +134,32 @@ class SimpleExcelImport {
 		return workbookObject
 	}
 
-	def private static resolveCell(tabName,rowNumber,columnLetter,cellContent,evaluator,isDate){
+	def private static resolveCell(tabName,rowNumber,columnLetter,Cell cellContent,evaluator,CellType desiredCellType){
 		def returnValue
-		switch(cellContent.getCellType()){
+		def shouldBeDate = false
+		def type = cellContent.getCellType()
+		if(desiredCellType != null && type != Cell.CELL_TYPE_FORMULA && type != Cell.CELL_TYPE_ERROR && type != Cell.CELL_TYPE_BLANK){				
+			if(desiredCellType == CellType.NUMERIC){
+				type = Cell.CELL_TYPE_NUMERIC
+			} else if(desiredCellType == CellType.STRING){
+				type = Cell.CELL_TYPE_STRING
+			} else if(desiredCellType == CellType.DATE){
+				type = Cell.CELL_TYPE_NUMERIC
+				shouldBeDate = true
+			}
+			cellContent.setCellType(type)
+		}
+		switch(type){
 			case 0: //CELL_TYPE_NUMERIC
-				returnValue = isDate?cellContent.getDateCellValue():cellContent.getNumericCellValue()
+				returnValue = shouldBeDate ? cellContent.getDateCellValue() : cellContent.getNumericCellValue()
 				break
 			case 1://CELL_TYPE_STRING
 				def content = cellContent.getStringCellValue()
 				//When evaluating formulas a blank string may fall here, therefore the blank check
-				returnValue = content?(isDate?cellContent.getDateCellValue():content):""
+				returnValue = !content ? "" : content
 				break
 			case 2://CELL_TYPE_FORMULA
-				returnValue = resolveCell(tabName,rowNumber,columnLetter,evaluator.evaluateInCell(cellContent),evaluator,isDate)
+				returnValue = resolveCell(tabName,rowNumber,columnLetter,evaluator.evaluateInCell(cellContent),evaluator,desiredCellType)
 				break
 			case 3://CELL_TYPE_BLANK
 				returnValue = ""
@@ -148,9 +171,6 @@ class SimpleExcelImport {
 				throw new InvalidValueException()
 			default:
 				throw new RuntimeException("Invalid cell type at ${rowNumber}, column ${columnLetter} within tab ${tabName}")
-		}
-		if(isDate && returnValue == null){
-			throw new NotADateColumnException(tabName:tabName,rowNumber:rowNumber,columnLetter:columnLetter)
 		}
 		returnValue
 	}
