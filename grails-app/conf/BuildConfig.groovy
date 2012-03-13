@@ -25,12 +25,9 @@ grails.project.dependency.resolution = {
     }
     dependencies {
         // specify dependencies here under either 'build', 'compile', 'runtime', 'test' or 'provided' scopes eg.
-		compile(
-			[group:'org.apache.poi', name:'poi', version:'3.7'],
-			[group:'org.apache.poi', name:'poi-ooxml', version:'3.7'],
-			[group:'org.apache.poi', name:'poi-ooxml-schemas', version:'3.7'],
-			[group:'org.apache.xmlbeans', name:'xmlbeans', version:'2.3.0']
-		)
+		compile([group:'org.apache.poi', name:'poi-ooxml', version:'3.7']){
+			excludes "stax-api", "geronimo-stax-api_1.0_spec", "xmlbeans"
+		}
         // runtime 'mysql:mysql-connector-java:5.1.13'
     }
 }
