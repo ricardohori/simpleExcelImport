@@ -3,4 +3,9 @@
 .project
 target/
 target-eclipse/
+out/
 web-app/WEB-INF/classes
+grails*.zip
+simpleExcelImport.ipr
+SimpleExcelImport.iml
+simpleExcelImport.iws

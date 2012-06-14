@@ -7,6 +7,7 @@ import java.text.SimpleDateFormat
 import br.com.plugitin.simpleexcelimport.exception.ColumnNotFoundException
 import br.com.plugitin.simpleexcelimport.exception.InvalidValueException
 import br.com.plugitin.simpleexcelimport.exception.TabNotFoundException
+import br.com.plugitin.simpleexcelimport.exception.FormulaNotSupportedException
 
 class SimpleExcelImportTests extends GrailsUnitTestCase {
 
@@ -27,7 +28,7 @@ class SimpleExcelImportTests extends GrailsUnitTestCase {
 			fail()
 		}catch(RuntimeException re){}
 	}
-	
+
 	void testExcelImportValueException() {
 		def excelFile = getInputStream("test/resources/testValueError.xlsx")
 		try{
@@ -91,22 +92,27 @@ class SimpleExcelImportTests extends GrailsUnitTestCase {
 			}
 		}
 	}
-	
-	private def styleSheetBooks() {
-		return [
-			name:"Books",
-			header:[
-				A:"Book Name",
-				B:"Author",
-				C:"Year"
-				],
-			headerTypes:[
-				C:CellType.DATE,
-			],
-			startRow:2
-		]
-	}
-	
+
+    void testErrorFormulaNotSupported() {
+        def structure = [:]
+        structure.putAll(styleSheetBooks())
+        structure.headerLine = [row:1, names:["Book Name", "Author", "Year"]]
+
+        def excelFile = getInputStream("test/resources/testFormulaNotSupported.xls")
+        try {
+            SimpleExcelImport.excelImport(excelFile, [structure])
+            fail("An error was expected")
+        } catch (Exception e) {
+            if(e instanceof FormulaNotSupportedException){
+                assertEquals "Books", e.tabName
+                assertEquals "B", e.columnLetter
+                assertEquals 2, e.columnLine
+            } else {
+                assertEquals FormulaNotSupportedException.class, e.getClass()
+            }
+        }
+    }
+
 	private void testWorkbook(excelFile){
 		def sheetStructureList = []
 		def testSheet = [
@@ -203,7 +209,22 @@ class SimpleExcelImportTests extends GrailsUnitTestCase {
 		assertEquals 6, books[1]["Book code"]
 		assertEquals "20", books[1]["Book Name"]
 	}
-	
+
+    private def styleSheetBooks() {
+        return [
+            name:"Books",
+            header:[
+                A:"Book Name",
+                B:"Author",
+                C:"Year"
+            ],
+            headerTypes:[
+                    C:CellType.DATE,
+            ],
+            startRow:2
+        ]
+    }
+
 	private def getInputStream(filename){
 		new FileInputStream(new File(filename))
 	}

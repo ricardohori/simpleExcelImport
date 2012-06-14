@@ -4,18 +4,10 @@ import org.apache.commons.lang.StringUtils
 import org.apache.poi.hssf.usermodel.HSSFFormulaEvaluator
 import org.apache.poi.hssf.usermodel.HSSFWorkbook
 import org.apache.poi.hssf.util.CellReference
-import org.apache.poi.ss.usermodel.Cell
-import org.apache.poi.ss.usermodel.Row
-import org.apache.poi.ss.usermodel.Sheet
-import org.apache.poi.ss.usermodel.Workbook
-import org.apache.poi.ss.usermodel.WorkbookFactory
+import org.apache.poi.ss.formula.eval.NotImplementedException
 import org.apache.poi.xssf.usermodel.XSSFFormulaEvaluator
-
-import br.com.plugitin.simpleexcelimport.exception.ColumnNotFoundException
-import br.com.plugitin.simpleexcelimport.exception.InvalidFileTypeException
-import br.com.plugitin.simpleexcelimport.exception.InvalidValueException
-import br.com.plugitin.simpleexcelimport.exception.TabNotFoundException
-
+import br.com.plugitin.simpleexcelimport.exception.*
+import org.apache.poi.ss.usermodel.*
 
 class SimpleExcelImport {
 	
@@ -159,7 +151,11 @@ class SimpleExcelImport {
 				returnValue = !content ? "" : content
 				break
 			case 2://CELL_TYPE_FORMULA
-				returnValue = resolveCell(tabName,rowNumber,columnLetter,evaluator.evaluateInCell(cellContent),evaluator,desiredCellType)
+				try{
+                    returnValue = resolveCell(tabName,rowNumber,columnLetter,evaluator.evaluateInCell(cellContent),evaluator,desiredCellType)
+                }catch(NotImplementedException e){
+                    throw new FormulaNotSupportedException(e, tabName, columnLetter, rowNumber)
+                }
 				break
 			case 3://CELL_TYPE_BLANK
 				returnValue = ""
