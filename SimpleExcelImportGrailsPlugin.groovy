@@ -1,6 +1,6 @@
 class SimpleExcelImportGrailsPlugin {
     // the plugin version
-    def version = "0.2.9"
+    def version = "0.3.0.G2"
     // the version or versions of Grails the plugin is designed for
     def grailsVersion = "1.3.7 > *"
     // the other plugins this plugin depends on

@@ -9,3 +9,7 @@ grails*.zip
 simpleExcelImport.ipr
 SimpleExcelImport.iml
 simpleExcelImport.iws
+.idea/**
+*.iml
+*.log
+plugin.xml
